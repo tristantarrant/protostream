@@ -1,8 +1,7 @@
 package org.infinispan.protostream.impl.parser.mappers;
 
 import org.infinispan.protostream.descriptors.Option;
-
-import com.squareup.protoparser.OptionElement;
+import org.infinispan.protostream.impl.parser.OptionElement;
 
 /**
  * @author gustavonalle

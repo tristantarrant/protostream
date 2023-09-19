@@ -1,6 +1,5 @@
 package org.infinispan.protostream.impl.parser;
 
-import java.io.IOException;
 import java.io.StringReader;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -13,10 +12,6 @@ import org.infinispan.protostream.config.Configuration;
 import org.infinispan.protostream.descriptors.FileDescriptor;
 import org.infinispan.protostream.impl.parser.mappers.ProtofileMapper;
 
-import com.squareup.protoparser.OptionElement;
-import com.squareup.protoparser.ProtoFile;
-import com.squareup.protoparser.ProtoParser;
-
 /**
  * Parser for .proto files based on the Protoparser.
  *
@@ -24,13 +19,13 @@ import com.squareup.protoparser.ProtoParser;
  * @author anistor@redhat.com
  * @since 2.0
  */
-public final class SquareProtoParser {
+public final class ProtostreamProtoParser {
 
    private static final ProtofileMapper PROTOFILE_MAPPER = new ProtofileMapper();
 
    private final Configuration configuration;
 
-   public SquareProtoParser(Configuration configuration) {
+   public ProtostreamProtoParser(Configuration configuration) {
       this.configuration = configuration;
    }
 
@@ -58,8 +53,12 @@ public final class SquareProtoParser {
             fileDescriptorMap.put(fileName, fileDescriptor);
          } catch (DescriptorParserException e) {
             reportParsingError(fileDescriptorSource, fileDescriptorMap, fileName, e);
-         } catch (IOException | RuntimeException e) {
+         } catch (RuntimeException e) {
             reportParsingError(fileDescriptorSource, fileDescriptorMap, fileName, new DescriptorParserException(e));
+         } catch (ParseException e) {
+            Token next = e.currentToken.next;
+            String s = String.format("Syntax error in %s at %d:%d: unexpected label: %s", fileName, next.beginLine, next.endColumn, next.image);
+            reportParsingError(fileDescriptorSource, fileDescriptorMap, fileName, new DescriptorParserException(s, e));
          }
       }
       return fileDescriptorMap;
@@ -69,7 +68,7 @@ public final class SquareProtoParser {
       Set<String> optionNames = new HashSet<>(protoFile.options().size());
       for (OptionElement optionElement : protoFile.options()) {
          if (!optionNames.add(optionElement.name())) {
-            throw new DescriptorParserException(protoFile.filePath() + ": Option \"" + optionElement.name() + "\" was already set.");
+            throw new DescriptorParserException(protoFile.fileName() + ": Option \"" + optionElement.name() + "\" was already set.");
          }
       }
    }

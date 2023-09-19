@@ -9,10 +9,10 @@ import static org.infinispan.protostream.impl.parser.mappers.Mappers.filter;
 import java.util.List;
 
 import org.infinispan.protostream.descriptors.FileDescriptor;
+import org.infinispan.protostream.impl.parser.EnumElement;
+import org.infinispan.protostream.impl.parser.MessageElement;
+import org.infinispan.protostream.impl.parser.ProtoFile;
 
-import com.squareup.protoparser.EnumElement;
-import com.squareup.protoparser.MessageElement;
-import com.squareup.protoparser.ProtoFile;
 
 /**
  * Mapper for high level ProtoFile to FileDescriptor.
@@ -25,18 +25,18 @@ public final class ProtofileMapper implements Mapper<ProtoFile, FileDescriptor> 
 
    @Override
    public FileDescriptor map(ProtoFile protoFile) {
-      List<MessageElement> messageTypes = filter(protoFile.typeElements(), MessageElement.class);
-      List<EnumElement> enumTypes = filter(protoFile.typeElements(), EnumElement.class);
+      List<MessageElement> messageTypes = filter(protoFile.messages(), MessageElement.class);
+      List<EnumElement> enumTypes = filter(protoFile.enums(), EnumElement.class);
       return new FileDescriptor.Builder()
             .withSyntax(map(protoFile.syntax()))
-            .withName(protoFile.filePath())
+            .withName(protoFile.fileName())
             .withPackageName(protoFile.packageName())
             .withMessageTypes(MESSAGE_LIST_MAPPER.map(messageTypes))
             .withEnumTypes(ENUM_LIST_MAPPER.map(enumTypes))
-            .withExtendDescriptors(EXTEND_LIST_MAPPER.map(protoFile.extendDeclarations()))
+            .withExtendDescriptors(EXTEND_LIST_MAPPER.map(protoFile.extend()))
             .withOptions(OPTION_LIST_MAPPER.map(protoFile.options()))
-            .withDependencies(protoFile.dependencies())
-            .withPublicDependencies(protoFile.publicDependencies())
+            .withDependencies(protoFile.privateImports())
+            .withPublicDependencies(protoFile.publicImports())
             .build();
    }
 
@@ -44,10 +44,10 @@ public final class ProtofileMapper implements Mapper<ProtoFile, FileDescriptor> 
       if (syntax == null) {
          return null;
       }
-      if (syntax == ProtoFile.Syntax.PROTO_2) {
+      if (syntax == ProtoFile.Syntax.proto2) {
          return FileDescriptor.Syntax.PROTO2;
       }
-      if (syntax == ProtoFile.Syntax.PROTO_3) {
+      if (syntax == ProtoFile.Syntax.proto3) {
          return FileDescriptor.Syntax.PROTO3;
       }
       throw new IllegalArgumentException("Unexpected syntax : " + syntax);

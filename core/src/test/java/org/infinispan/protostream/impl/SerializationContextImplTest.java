@@ -288,8 +288,8 @@ public class SerializationContextImplTest {
       assertEquals(2, errors.size());
       assertTrue(errors.containsKey("test1.proto"));
       assertTrue(errors.containsKey("test2.proto"));
-      assertEquals("java.lang.IllegalStateException: Syntax error in test1.proto at 1:9: unexpected label: kabooom1", errors.get("test1.proto").getMessage());
-      assertEquals("java.lang.IllegalStateException: Syntax error in test2.proto at 1:9: unexpected label: kabooom2", errors.get("test2.proto").getMessage());
+      assertEquals("Syntax error in test1.proto at 1:8: unexpected label: kabooom1", errors.get("test1.proto").getMessage());
+      assertEquals("Syntax error in test2.proto at 1:8: unexpected label: kabooom2", errors.get("test2.proto").getMessage());
       assertTrue(ctx.getFileDescriptors().containsKey("test1.proto"));
       assertTrue(ctx.getFileDescriptors().containsKey("test2.proto"));
       assertFalse(ctx.getFileDescriptors().get("test1.proto").isResolved());
@@ -339,9 +339,9 @@ public class SerializationContextImplTest {
       assertTrue(errors1.containsKey("test1.proto"));
       assertTrue(errors2.containsKey("test1.proto"));
       assertTrue(errors2.containsKey("test2.proto"));
-      assertEquals("java.lang.IllegalStateException: Syntax error in test1.proto at 1:9: unexpected label: kabooom1", errors1.get("test1.proto").getMessage());
-      assertEquals("java.lang.IllegalStateException: Syntax error in test1.proto at 1:9: unexpected label: kabooom1", errors2.get("test1.proto").getMessage());
-      assertEquals("java.lang.IllegalStateException: Syntax error in test2.proto at 1:9: unexpected label: kabooom2", errors2.get("test2.proto").getMessage());
+      assertEquals("Syntax error in test1.proto at 1:8: unexpected label: kabooom1", errors1.get("test1.proto").getMessage());
+      assertEquals("Syntax error in test1.proto at 1:8: unexpected label: kabooom1", errors2.get("test1.proto").getMessage());
+      assertEquals("Syntax error in test2.proto at 1:8: unexpected label: kabooom2", errors2.get("test2.proto").getMessage());
       assertTrue(ctx.getFileDescriptors().containsKey("test1.proto"));
       assertTrue(ctx.getFileDescriptors().containsKey("test2.proto"));
       assertFalse(ctx.getFileDescriptors().get("test1.proto").isResolved());
@@ -379,7 +379,7 @@ public class SerializationContextImplTest {
       assertTrue(successful.isEmpty());
       assertEquals(1, errors.size());
       assertTrue(errors.containsKey("test.proto"));
-      assertEquals("java.lang.IllegalStateException: Syntax error in test.proto at 1:8: unexpected label: kabooom", errors.get("test.proto").getMessage());
+      assertEquals("Syntax error in test.proto at 1:7: unexpected label: kabooom", errors.get("test.proto").getMessage());
       assertTrue(ctx.getFileDescriptors().containsKey("test.proto"));
       assertFalse(ctx.getFileDescriptors().get("test.proto").isResolved());
       ctx.unregisterProtoFile("test.proto");
@@ -416,7 +416,7 @@ public class SerializationContextImplTest {
          ctx.registerProtoFiles(source);
          fail("DescriptorParserException expected");
       } catch (DescriptorParserException e) {
-         assertEquals("java.lang.IllegalStateException: Syntax error in file1.proto at 1:5: unexpected label: this", e.getMessage());
+         assertEquals("Syntax error in file1.proto at 1:4: unexpected label: this", e.getMessage());
       }
 
       FileDescriptor fileDescriptor = ctx.getFileDescriptors().get("file1.proto");

@@ -1,8 +1,7 @@
 package org.infinispan.protostream.impl.parser.mappers;
 
 import org.infinispan.protostream.descriptors.OneOfDescriptor;
-
-import com.squareup.protoparser.OneOfElement;
+import org.infinispan.protostream.impl.parser.OneOfElement;
 
 /**
  * @author anistor@redhat.com

@@ -10,14 +10,13 @@ import org.infinispan.protostream.descriptors.ExtendDescriptor;
 import org.infinispan.protostream.descriptors.FieldDescriptor;
 import org.infinispan.protostream.descriptors.OneOfDescriptor;
 import org.infinispan.protostream.descriptors.Option;
-
-import com.squareup.protoparser.EnumConstantElement;
-import com.squareup.protoparser.EnumElement;
-import com.squareup.protoparser.ExtendElement;
-import com.squareup.protoparser.FieldElement;
-import com.squareup.protoparser.MessageElement;
-import com.squareup.protoparser.OneOfElement;
-import com.squareup.protoparser.OptionElement;
+import org.infinispan.protostream.impl.parser.EnumConstantElement;
+import org.infinispan.protostream.impl.parser.EnumElement;
+import org.infinispan.protostream.impl.parser.ExtendElement;
+import org.infinispan.protostream.impl.parser.FieldElement;
+import org.infinispan.protostream.impl.parser.MessageElement;
+import org.infinispan.protostream.impl.parser.OneOfElement;
+import org.infinispan.protostream.impl.parser.OptionElement;
 
 /**
  * Mappers and utilities used by the conversion of the protoparser model to protostream descriptors.

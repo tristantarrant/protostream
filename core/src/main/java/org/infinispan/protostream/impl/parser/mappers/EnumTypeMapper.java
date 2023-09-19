@@ -4,8 +4,7 @@ import static org.infinispan.protostream.impl.parser.mappers.Mappers.ENUM_VALUE_
 import static org.infinispan.protostream.impl.parser.mappers.Mappers.OPTION_LIST_MAPPER;
 
 import org.infinispan.protostream.descriptors.EnumDescriptor;
-
-import com.squareup.protoparser.EnumElement;
+import org.infinispan.protostream.impl.parser.EnumElement;
 
 /**
  * @author gustavonalle

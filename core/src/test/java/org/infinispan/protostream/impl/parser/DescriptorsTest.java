@@ -28,7 +28,6 @@ import org.infinispan.protostream.descriptors.JavaType;
 import org.infinispan.protostream.descriptors.Label;
 import org.infinispan.protostream.descriptors.ResolutionContext;
 import org.infinispan.protostream.descriptors.Type;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
@@ -43,7 +42,7 @@ public class DescriptorsTest {
    public void testGroupsAreNotSupported() {
       // groups are a deprecated feature and are not supported
       exception.expect(DescriptorParserException.class);
-      exception.expectMessage("Syntax error in file1.proto at 2:33: expected ';'");
+      exception.expectMessage("Syntax error in file1.proto at 2:16: unexpected label: group");
 
       String file1 = "message TestMessage {\n" +
             "  repeated group TestGroup = 1 {\n" +
@@ -96,7 +95,7 @@ public class DescriptorsTest {
       exception.expectMessage("Import 'invalid.proto' not found");
 
       String file1 = "package test;\n" +
-            "import invalid.proto;\n" +
+            "import \"invalid.proto\";\n" +
             "message M {\n" +
             "   required string a = 1;\n" +
             "}";
@@ -227,7 +226,6 @@ public class DescriptorsTest {
       parseAndResolve(source);
    }
 
-   @Ignore("Test disabled due to https://issues.jboss.org/browse/IPROTO-14")
    @Test
    public void testAllowAliasOfEnumConstantValue() {
       String file1 = "package test1;\n" +
@@ -540,7 +538,7 @@ public class DescriptorsTest {
    public void testEmptyPackageName() {
       // package name cannot be empty
       exception.expect(DescriptorParserException.class);
-      exception.expectMessage("Syntax error in file1.proto at 1:9: expected a word");
+      exception.expectMessage("Syntax error in file1.proto at 1:9: unexpected label: ;");
 
       String file1 = "package ;\n" +
             "message M1 {\n" +
@@ -687,7 +685,7 @@ public class DescriptorsTest {
       assertNotNull(typeX);
       assertEquals(1, typeX.getFields().size());
       FieldDescriptor field1 = typeX.getFields().get(0);
-      assertEquals("some doc text \n   some more doc text", typeX.getDocumentation());
+      assertEquals("some doc text \nsome more doc text", typeX.getDocumentation());
       assertEquals("field doc text", field1.getDocumentation());
    }
 
@@ -727,7 +725,7 @@ public class DescriptorsTest {
       assertNotNull(typeX);
       assertEquals(1, typeX.getFields().size());
       FieldDescriptor field1 = typeX.getFields().get(0);
-      assertEquals("@Foo(fooValue) \n   some more doc text", typeX.getDocumentation());
+      assertEquals("@Foo(fooValue) \nsome more doc text", typeX.getDocumentation());
       Map<String, AnnotationElement.Annotation> typeAnnotations = typeX.getAnnotations();
       assertEquals("fooValue", typeAnnotations.get("Foo").getDefaultAttributeValue().getValue());
       assertEquals("fooValue", typeX.getProcessedAnnotation("Foo"));
@@ -863,7 +861,7 @@ public class DescriptorsTest {
    @Test
    public void testBrokenUndefinedAnnotation() {
       exception.expect(AnnotationParserException.class);
-      exception.expectMessage("Error: 2,21: ')' expected");
+      exception.expectMessage("Error: 2,23: ')' expected");
 
       Configuration config = Configuration.builder().annotationsConfig()
             .annotation("Field", AnnotationElement.AnnotationTarget.FIELD)
@@ -1016,7 +1014,7 @@ public class DescriptorsTest {
 
    private Map<String, FileDescriptor> parseAndResolve(FileDescriptorSource fileDescriptorSource, Configuration config) {
       // parse the input
-      SquareProtoParser protoParser = new SquareProtoParser(config);
+      ProtostreamProtoParser protoParser = new ProtostreamProtoParser(config);
       Map<String, FileDescriptor> fileDescriptorMap = protoParser.parse(fileDescriptorSource);
 
       // resolve imports and types

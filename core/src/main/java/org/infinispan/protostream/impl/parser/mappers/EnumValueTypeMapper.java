@@ -3,8 +3,7 @@ package org.infinispan.protostream.impl.parser.mappers;
 import static org.infinispan.protostream.impl.parser.mappers.Mappers.OPTION_LIST_MAPPER;
 
 import org.infinispan.protostream.descriptors.EnumValueDescriptor;
-
-import com.squareup.protoparser.EnumConstantElement;
+import org.infinispan.protostream.impl.parser.EnumConstantElement;
 
 
 /**

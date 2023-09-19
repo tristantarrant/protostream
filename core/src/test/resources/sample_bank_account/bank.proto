@@ -73,6 +73,7 @@ message User {
    enum Gender {
       MALE = 0;    //NOTE: It seems negative values are accepted too!
       FEMALE = 1;
+      UNSPECIFIED = 2;
    }
 
    /**
@@ -97,6 +98,13 @@ message User {
  * @Indexed
  */
 message Account {
+   reserved "gamma";
+   reserved "alpha", "beta";
+   reserved 8;
+   reserved 10, 11;
+   reserved 13 to 15;
+   reserved 17, 19 to 20, 22;
+
 
    /**
     * @Field(store = Store.YES)
@@ -168,7 +176,6 @@ message Account {
  * @Analyzer(definition = "standard")
  */
 message Transaction {
-
    /**
     * @Field(store = Store.YES)
     * @SortableField
@@ -218,6 +225,11 @@ message Transaction {
     * No annotations here. This is left unindexed on purpose.
     */
    required bool isValid = 9;
+
+   oneof choice {
+      string one = 10;
+      int32 or_the_other = 11;
+   }
 }
 
 /**

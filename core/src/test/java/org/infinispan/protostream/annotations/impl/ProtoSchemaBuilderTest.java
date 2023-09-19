@@ -54,7 +54,7 @@ import org.infinispan.protostream.descriptors.EnumDescriptor;
 import org.infinispan.protostream.descriptors.FileDescriptor;
 import org.infinispan.protostream.domain.Address;
 import org.infinispan.protostream.domain.User;
-import org.infinispan.protostream.impl.parser.SquareProtoParser;
+import org.infinispan.protostream.impl.parser.ProtostreamProtoParser;
 import org.infinispan.protostream.test.AbstractProtoStreamTest;
 import org.infinispan.protostream.test.ExpectedLogMessage;
 import org.junit.Rule;
@@ -534,7 +534,7 @@ public class ProtoSchemaBuilderTest extends AbstractProtoStreamTest {
             .build(ctx);
 
       FileDescriptorSource fileDescriptorSource = FileDescriptorSource.fromString("test1.proto", schemaFile);
-      Map<String, FileDescriptor> fileDescriptors = new SquareProtoParser(ctx.getConfiguration()).parse(fileDescriptorSource);
+      Map<String, FileDescriptor> fileDescriptors = new ProtostreamProtoParser(ctx.getConfiguration()).parse(fileDescriptorSource);
 
       FileDescriptor fd = fileDescriptors.get("test1.proto");
       assertNotNull(fd);

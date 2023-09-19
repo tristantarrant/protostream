@@ -1,5 +1,6 @@
 package org.infinispan.protostream.impl.parser.mappers;
 
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -11,7 +12,7 @@ import java.util.List;
  * @author gustavonalle
  * @since 2.0
  */
-final class ListMapper<S, T> implements Mapper<List<S>, List<T>> {
+final class ListMapper<S, T> implements Mapper<Collection<S>, List<T>> {
 
    private final Mapper<S, T> mapper;
 
@@ -20,7 +21,7 @@ final class ListMapper<S, T> implements Mapper<List<S>, List<T>> {
    }
 
    @Override
-   public List<T> map(List<S> input) {
+   public List<T> map(Collection<S> input) {
       List<T> mapped = new LinkedList<>();
       for (S elem : input) {
          mapped.add(mapper.map(elem));

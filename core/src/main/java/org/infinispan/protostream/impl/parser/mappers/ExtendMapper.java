@@ -3,8 +3,8 @@ package org.infinispan.protostream.impl.parser.mappers;
 import static org.infinispan.protostream.impl.parser.mappers.Mappers.FIELD_LIST_MAPPER;
 
 import org.infinispan.protostream.descriptors.ExtendDescriptor;
+import org.infinispan.protostream.impl.parser.ExtendElement;
 
-import com.squareup.protoparser.ExtendElement;
 
 /**
  * @author gustavonalle
