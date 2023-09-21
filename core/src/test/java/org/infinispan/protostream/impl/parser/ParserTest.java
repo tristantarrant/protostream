@@ -33,9 +33,9 @@ public class ParserTest {
          assertField(message, 2, Label.REQUIRED, DataType.ScalarType.STRING, "name", 3);
          assertField(message, 3, Label.OPTIONAL, DataType.ScalarType.STRING, "surname", 4);
          assertField(message, 4, Label.OPTIONAL, DataType.ScalarType.STRING, "salutation", 5);
-         assertField(message, 5, Label.REPEATED, DataType.NamedType.create("Address"), "addresses", 6);
+         assertField(message, 5, Label.REPEATED, DataType.create("Address"), "addresses", 6);
          assertField(message, 6, Label.OPTIONAL, DataType.ScalarType.INT32, "age", 7);
-         assertField(message, 7, Label.OPTIONAL, DataType.NamedType.create("Gender"), "gender", 8);
+         assertField(message, 7, Label.OPTIONAL, DataType.create("Gender"), "gender", 8);
          assertField(message, 8, Label.OPTIONAL, DataType.ScalarType.STRING, "notes", 9);
          assertField(message, 9, Label.OPTIONAL, DataType.ScalarType.FIXED64, "creationDate", 10);
          assertField(message, 10, Label.OPTIONAL, DataType.ScalarType.FIXED64, "passwordExpirationDate", 11);
@@ -57,10 +57,10 @@ public class ParserTest {
          assertField(message, 1, Label.OPTIONAL, DataType.ScalarType.STRING, "description", 2);
          assertFieldOptions(message, 1, "default", "Checking account");
          assertField(message, 2, Label.REQUIRED, DataType.ScalarType.FIXED64, "creationDate", 3);
-         assertField(message, 3, Label.OPTIONAL, DataType.NamedType.create("Limits"), "limits", 4);
-         assertField(message, 4, Label.REQUIRED, DataType.NamedType.create("Limits"), "hardLimits", 5);
+         assertField(message, 3, Label.OPTIONAL, DataType.create("Limits"), "limits", 4);
+         assertField(message, 4, Label.REQUIRED, DataType.create("Limits"), "hardLimits", 5);
          assertField(message, 5, Label.REPEATED, DataType.ScalarType.BYTES, "blurb", 6);
-         assertField(message, 6, Label.REPEATED, DataType.NamedType.create("Currency"), "currencies", 7);
+         assertField(message, 6, Label.REPEATED, DataType.create("Currency"), "currencies", 7);
          assertEnum(message, 0, "Currency", "EUR", "GBP", "USD", "BRL");
 
          // Account.Limits
@@ -90,7 +90,7 @@ public class ParserTest {
 
          // int_array
          message = assertMessage(input, 4, "user_list", 1, 0, 0);
-         assertField(message, 0, Label.REPEATED, DataType.NamedType.create("User"), "theList", 1);
+         assertField(message, 0, Label.REPEATED, DataType.create("User"), "theList", 1);
 
       }
    }

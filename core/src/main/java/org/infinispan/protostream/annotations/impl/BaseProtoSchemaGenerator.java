@@ -167,6 +167,7 @@ public abstract class BaseProtoSchemaGenerator {
       if (log.isTraceEnabled()) {
          log.tracef("Generated proto file:\n%s", protoFile);
       }
+      System.out.println(protoFile);
 
       serializationContext.registerProtoFiles(FileDescriptorSource.fromString(fileName, protoFile));
 

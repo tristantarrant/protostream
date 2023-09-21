@@ -99,22 +99,6 @@ TOKEN :
 | <RESERVED_TKN: "reserved">
 | <RETURNS_TKN: "returns">
 | <STREAM_TKN: "stream">
-| <TYPE_TKN: "double"
-           | "float"
-           | "int32"
-           | "int64"
-           | "uint32"
-           | "uint64"
-           | "sint32"
-           | "sint64"
-           | "fixed32"
-           | "fixed64"
-           | "sfixed32"
-           | "sfixed64"
-           | "bool"
-           | "string"
-           | "bytes"
-           | "Any">
 | <RPC_TKN: "rpc">
 | <NUMBER_TKN: "0" | (["-"])?["1"-"9"](["0"-"9"])* | "max">
 | <DOUBLE_TKN: ("0" | (["-"])?["1"-"9"](["0"-"9"])*) "." (["0"-"9"])*>
@@ -275,19 +259,12 @@ void MemberPart(FieldElement f) : {
  Token t;
  DataType dt;
 } {
-  dt = ClassOrTypePart() s = KeyPart() { f.type(dt); f.name(s); } <EQUL_TKN> t = <NUMBER_TKN> { f.tag(toInt(t)); } [FieldOptionsPart(f)] <SEMI_COLON_TKN>
-}
-DataType ClassOrTypePart() : {
- DataType t;
- String s;
-} {
-  t = TypePart() { return t; }
-  | s = ClassPart() { return DataType.NamedType.create(s); }
+  dt = TypePart() s = KeyPart() { f.type(dt); f.name(s); } <EQUL_TKN> t = <NUMBER_TKN> { f.tag(toInt(t)); } [FieldOptionsPart(f)] <SEMI_COLON_TKN>
 }
 DataType TypePart() : {
     Token t;
 } {
-  t = <TYPE_TKN> { return DataType.ScalarType.valueOf(t.image.toUpperCase()); }
+  t = <IDENT_TKN> { return DataType.create(t.image); }
 }
 void FieldOptionsPart(OptionsContainer o) : {
 } {
@@ -369,11 +346,11 @@ void MapPart(FieldContainer c) : {
 
   <MAP_TKN>
   <LESSTHAN_TKN>
-   kt = ClassOrTypePart()
+   kt = TypePart()
    <COMMA_TKN>
-   vt = ClassOrTypePart()
+   vt = TypePart()
   <GRATETHAN_TKN>
-  n = KeyPart() <EQUL_TKN> t = <NUMBER_TKN> <SEMI_COLON_TKN> { f.name(n).type(DataType.MapType.create(kt, vt)).tag(toInt(t)); c.addField(f);  }
+  n = KeyPart() <EQUL_TKN> t = <NUMBER_TKN> <SEMI_COLON_TKN> { f.name(n).type(DataType.create(kt, vt)).tag(toInt(t)); c.addField(f);  }
 }
 
 void ExtensionsPart(MessageElement m) : {

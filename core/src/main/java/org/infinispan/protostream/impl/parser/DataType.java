@@ -8,6 +8,18 @@ import java.util.Objects;
  **/
 public interface DataType {
 
+   static DataType create(String type) {
+      try {
+         return ScalarType.valueOf(type.toUpperCase(Locale.ROOT));
+      } catch (IllegalArgumentException e) {
+         return new NamedType(Objects.requireNonNull(type));
+      }
+   }
+
+   static MapType create(DataType keyType, DataType valueType) {
+      return new MapType(Objects.requireNonNull(keyType, "keyType"), Objects.requireNonNull(valueType, "valueType"));
+   }
+
    Kind kind();
 
    enum Kind {
@@ -39,7 +51,6 @@ public interface DataType {
          return Kind.SCALAR;
       }
 
-
       @Override
       public String toString() {
          return name().toLowerCase(Locale.US);
@@ -47,9 +58,6 @@ public interface DataType {
    }
 
    final class MapType implements DataType {
-      public static MapType create(DataType keyType, DataType valueType) {
-         return new MapType(Objects.requireNonNull(keyType, "keyType"), Objects.requireNonNull(valueType, "valueType"));
-      }
 
       private final DataType keyType;
       private final DataType valueType;
@@ -74,10 +82,6 @@ public interface DataType {
    }
 
    final class NamedType implements DataType {
-      public static NamedType create(String name) {
-         return new NamedType(Objects.requireNonNull(name));
-      }
-
       private final String name;
 
       private NamedType(String name) {
