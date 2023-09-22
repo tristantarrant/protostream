@@ -2,9 +2,7 @@ package org.infinispan.protostream.descriptors;
 
 import static java.util.Collections.unmodifiableList;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.infinispan.protostream.DescriptorParserException;
 import org.infinispan.protostream.config.AnnotationConfiguration;
@@ -25,7 +23,6 @@ public final class FieldDescriptor extends AnnotatedDescriptorImpl implements An
    private final String typeName;
    private final String defaultValue;
    private final List<Option> options;
-   private final Map<String, Object> optionByName = new HashMap<>();
    private final boolean isExtension;
    private Type type;
    private FileDescriptor fileDescriptor;
@@ -38,9 +35,6 @@ public final class FieldDescriptor extends AnnotatedDescriptorImpl implements An
       number = builder.number;
       label = builder.label;
       options = unmodifiableList(builder.options);
-      for (Option opt : options) {
-         optionByName.put(opt.getName(), opt.getValue());
-      }
       typeName = builder.typeName;
       type = Type.primitiveFromString(typeName);
       defaultValue = builder.defaultValue;
@@ -68,20 +62,11 @@ public final class FieldDescriptor extends AnnotatedDescriptorImpl implements An
    }
 
    public Object getOptionByName(String name) {
-      return optionByName.get(name);
+      return options.stream().filter(o -> name.equals(o.getName())).findFirst().orElse(null);
    }
 
    public List<Option> getOptions() {
       return options;
-   }
-
-   public Option getOption(String name) {
-      for (Option o : options) {
-         if (o.getName().equals(name)) {
-            return o;
-         }
-      }
-      return null;
    }
 
    public boolean isRequired() {
@@ -93,7 +78,7 @@ public final class FieldDescriptor extends AnnotatedDescriptorImpl implements An
    }
 
    public boolean isPacked() {
-      return optionByName.containsKey(PACKED);
+      return getOptionByName(PACKED) != null;
    }
 
    public Object getDefaultValue() {
