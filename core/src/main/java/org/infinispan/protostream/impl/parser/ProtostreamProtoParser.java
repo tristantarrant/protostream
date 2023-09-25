@@ -1,16 +1,16 @@
 package org.infinispan.protostream.impl.parser;
 
-import java.io.StringReader;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
-
 import org.infinispan.protostream.DescriptorParserException;
 import org.infinispan.protostream.FileDescriptorSource;
 import org.infinispan.protostream.config.Configuration;
 import org.infinispan.protostream.descriptors.FileDescriptor;
 import org.infinispan.protostream.impl.parser.mappers.ProtofileMapper;
+
+import java.io.StringReader;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Parser for .proto files based on the Protoparser.
@@ -46,7 +46,7 @@ public final class ProtostreamProtoParser {
       for (Map.Entry<String, String> entry : input.entrySet()) {
          String fileName = entry.getKey();
          try {
-            ProtoFile protoFile = ProtoParser.parse(fileName, new StringReader(entry.getValue()));
+            ProtoFile protoFile = Proto3Parser.parse(fileName, new StringReader(entry.getValue()));
             checkUniqueFileOptions(protoFile);
             FileDescriptor fileDescriptor = PROTOFILE_MAPPER.map(protoFile);
             fileDescriptor.setConfiguration(configuration);

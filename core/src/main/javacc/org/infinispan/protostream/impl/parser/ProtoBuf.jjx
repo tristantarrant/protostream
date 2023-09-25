@@ -1,0 +1,368 @@
+options {
+   STATIC=false;
+   SANITY_CHECK=true;
+   DEBUG_PARSER=false;
+   DEBUG_TOKEN_MANAGER=false;
+}
+
+PARSER_BEGIN(ProtoParser)
+
+package org.infinispan.protostream.impl.parser;
+
+import java.io.Reader;import java.util.regex.Pattern;
+import org.infinispan.protostream.descriptors.Label;
+
+/**
+ * Protocol Buffers grammar  for JavaCC
+ * Based on ProtoParser.jjt by Toshikazu Ando (foobar@em.boo.jp)
+ * @see "https://developers.google.com/protocol-buffers/docs/proto3"
+ */
+public class ProtoParser {
+   static final Pattern DECOMMENTIFY = Pattern.compile("(\\s*\\*+\\/|^([ \\t]*\\/\\*+|[ \\t]*\\*[ \\t]*))", Pattern.MULTILINE);
+
+   static ProtoFile parse(String fileName, Reader reader) throws ParseException {
+      ProtoFile f = new ProtoParser(reader).Input();
+      f.fileName(fileName);
+      return f;
+   }
+
+   static void appendComment(StringBuilder s) {
+      ProtoFile.comments.get().append(s);
+   }
+
+   static String comment() {
+      String s = ProtoFile.comments.get().toString();
+      ProtoFile.comments.remove();
+      return DECOMMENTIFY.matcher(s).replaceAll("").trim();
+   }
+
+   static String unquote(String s) {
+      return s.charAt(0) == '"' ? s.substring(1, s.length() - 1) : s;
+   }
+
+   static String unquote(Token t) {
+      return unquote(t.image);
+   }
+
+   static int toInt(Token t) {
+      return Integer.parseInt(t.image);
+   }
+}
+
+PARSER_END(ProtoParser)
+
+SKIP :
+{
+  " "
+| "\t"
+| "\n"
+| "\r"
+| <"//" (~["\n","\r"])* ("\n" | "\r" | "\r\n")> { ProtoParser.appendComment(image); }
+| <"/*" (~["*"])* "*" ("*" | ~["*","/"] (~["*"])* "*")* "/"> { ProtoParser.appendComment(image); }
+}
+
+
+TOKEN :
+{
+  <STRLIT: "\"" ( ~["\""] )* "\"" >
+| <EQ: "=">
+| <SEMI_COLON: ";">
+| <COLON: ":">
+| <COMMA: ",">
+| <DOT: ".">
+| <TO: "to">
+| <LBRACE: "{">
+| <RBRACE: "}">
+| <LPAREN: "(">
+| <RPAREN: ")">
+| <LBRACKET: "[">
+| <RBRACKET: "]">
+| <LESSTHAN: "<">
+| <GRATETHAN: ">">
+| <SYNTAX: "syntax">
+| <BOOLEAN: "true" | "false">
+| <ATTRIBUTE: "required"
+                | "optional"
+                | "repeated">
+| <OPTION: "option">
+| <IMPORT: "import">
+| <PUBLIC: "public">
+| <PACKAGE: "package">
+| <SERVICE: "service">
+| <MESSAGE: "message">
+| <ENUM: "enum">
+| <ONEOF: "oneof">
+| <GROUP: "group">
+| <EXTENTIONS: "extensions">
+| <EXTEND: "extend">
+| <MAP: "map">
+| <RESERVED: "reserved">
+| <RETURNS: "returns">
+| <STREAM: "stream">
+| <RPC: "rpc">
+| <NUMBER: "0" | (["-"])?["1"-"9"](["0"-"9"])* | "max">
+| <DOUBLE: ("0" | (["-"])?["1"-"9"](["0"-"9"])*) "." (["0"-"9"])*>
+| <IDENT: ["_","a"-"z","A"-"Z"] (["_","a"-"z","A"-"Z","0"-"9"])*>
+| <FULLIDENT: ["_","a"-"z","A"-"Z"] (["_","a"-"z","A"-"Z","0"-"9"])* ("." ["_","a"-"z","A"-"Z"] (["_","a"-"z","A"-"Z","0"-"9"])*)*>
+}
+
+ProtoFile Input() : {
+   ProtoFile p = new ProtoFile();
+} {
+  (Syntax(p) { p.documentation(comment()); })?
+  (Import(p) { p.documentation( p.documentation() + comment()); }
+   | Option(p)
+   | Package(p)
+   | Service(p)
+   | Message(p, p.packageName())
+   | Enum(p, p.packageName())
+   | Extend(p, p.packageName()))*
+   <EOF>{ return p; }
+}
+
+void Import(ProtoFile p) : {
+ Token t;
+ boolean pub = false;
+} {
+  <IMPORT> [<PUBLIC> { pub = true; }] t = <STRLIT> <SEMI_COLON> { if (pub) p.addPublicImport(unquote(t)); else p.addPrivateImport(unquote(t)); }
+}
+
+
+String Value() : {
+    Token t;
+} {
+  t = <BOOLEAN> { return t.image; }
+   | t = <STRLIT> { return t.image; }
+   | t = <NUMBER>  { return t.image; }
+   | t = <DOUBLE> { return t.image; }
+   | t = <IDENT> { return t.image; }
+   | BraceValue() { return null; /*TODO*/ }
+}
+
+void BraceValue() : {
+} {
+   <LBRACE>
+   (BraceValueOne())*
+   <RBRACE>
+}
+void BraceValueOne() : {
+} {
+   <IDENT> <COLON> (BraceValueOneBracket() | Value())
+}
+void BraceValueOneBracket() : {
+} {
+   <LBRACKET>
+   Value() (<COMMA> Value())*
+   <RBRACKET>
+}
+void Syntax(ProtoFile p) : {
+   Token t;
+} {
+   <SYNTAX> <EQ> t = <STRLIT> <SEMI_COLON> { p.syntax(ProtoFile.Syntax.valueOf(unquote(t))); }
+}
+void Option(OptionsContainer o) : {
+   String name;
+   String value;
+} {
+    <OPTION> name=Class() <EQ> value=Value() <SEMI_COLON> { o.addOption(new OptionElement(name, value)); }
+}
+String OptionName(): {
+   Token t;
+} {
+   ( t = <IDENT> | <LPAREN> )
+}
+String CustomOptions() : {
+   String s;
+} {
+   <LPAREN> s = Class() <RPAREN> { return s; }
+}
+String Key() : {
+    Token t;
+} {
+   t = <IDENT> { return t.image; }
+    | t = <MESSAGE> { return t.image; }
+    | t = <PACKAGE> { return t.image; }
+    | t = <SERVICE> { return t.image; }
+}
+
+void Package(ProtoFile p) : {
+ Token t;
+} {
+  <PACKAGE> s = <FULLIDENT> <SEMI_COLON> { p.packageName(t.image); }
+}
+
+void Service(ProtoFile p) : {
+} {
+  <SERVICE> <IDENT>
+   <LBRACE>
+   (Option(p)
+    |Rpc())*
+   <RBRACE>
+}
+void Rpc() : {
+} {
+  <RPC> Class()
+   <LPAREN>
+   [(Stream())? Class()]
+   <RPAREN>
+   <RETURNS>
+
+   <LPAREN>
+   [(Stream())? Class()]
+   <RPAREN>
+
+   (RpcBrace()|<SEMI_COLON>)
+}
+void Stream() : {
+} {
+    <STREAM>
+}
+void RpcBrace() : {
+} {
+    <LBRACE>
+    (Option(null))*
+    <RBRACE>
+}
+
+void Message(MessageContainer c, String prefix) : {
+ MessageElement m = new MessageElement().documentation(comment());
+ String s;
+} {
+  <MESSAGE> s = Class() { m.name(s).prefix(prefix); } MessageBranch(m) { c.addMessage(m); }
+}
+void MessageBranch(MessageElement m) : {
+ FieldElement f;
+} {
+   <LBRACE>
+   (Field(m)
+    |Enum(m, m.qualifiedName())
+    |Reserved(m)
+    |OneOf(m)
+    |Map(m)
+    |Message(m, m.qualifiedName())
+    |Extensions(m)
+    |Extend(m, m.qualifiedName())
+    |Option(m)
+    |<SEMI_COLON>)*
+   <RBRACE>
+}
+FieldElement Field(FieldContainer c) : {
+ FieldElement f = new FieldElement().documentation(comment());
+ Token t;
+} {
+  [t = <ATTRIBUTE> { f.label(Label.valueOf(t.image.toUpperCase())); }]
+  Member(f) { c.addField(f); return f; }
+}
+void Member(FieldElement f) : {
+ String s;
+ Token t;
+ DataType dt;
+} {
+  dt = Type() s = Key() { f.type(dt); f.name(s); } <EQ> t = <NUMBER> { f.tag(toInt(t)); } [FieldOptions(f)] <SEMI_COLON>
+}
+DataType Type() : {
+    Token t;
+} {
+  t = <IDENT> { return DataType.create(t.image); }
+}
+void FieldOptions(OptionsContainer o) : {
+} {
+  <LBRACKET>
+  (FieldOption(o) (<COMMA> FieldOption(o))*)?
+  <RBRACKET>
+}
+void FieldOption(OptionsContainer o) : {
+   String n, v;
+} {
+  n = Class() <EQ> v = Value() { o.addOption(new OptionElement(n, unquote(v))); }
+}
+
+void Enum(EnumContainer enumContainer, String prefix) : {
+   EnumElement e = new EnumElement().documentation(comment());
+   String s;
+} {
+  <ENUM>
+   s = Class() { e.name(s).prefix(prefix); }
+   <LBRACE>
+   (Option(e))*
+   (EnumMember(e))*
+   <RBRACE>
+   { enumContainer.addEnum(e); }
+}
+void EnumMember(EnumElement e) : {
+   String n;
+   Token t;
+} {
+  n = Class() <EQ> t = <NUMBER> [FieldOptions(e)] <SEMI_COLON> { e.addEnumConstant(new EnumConstantElement(n, toInt(t)).documentation(comment())); }
+}
+
+void Reserved(MessageElement m) : {
+} {
+  <RESERVED> ReservedValues(m)
+}
+
+void ReservedValues(MessageElement m) : {
+   Token t;
+}
+{
+   t = <STRLIT> { m.addReserved(unquote(t)); } ( <COMMA> t = <STRLIT> { m.addReserved(unquote(t)); } )* <SEMI_COLON>
+   | ReservedNumber(m) (<COMMA> ReservedNumber(m) )* <SEMI_COLON>
+}
+
+void ReservedNumber(MessageElement m) : {
+   Token t1, t2 = null;
+}
+{
+   t1 = <NUMBER> ( <TO> t2 = <NUMBER> )?
+   {
+      if (t2 == null) {
+         m.addReserved(toInt(t1));
+      } else {
+         m.addReserved(toInt(t1), toInt(t2));
+      }
+   }
+}
+
+void OneOf(MessageElement m) : {
+   OneOfElement oneof = new OneOfElement().documentation(comment());
+   FieldElement f;
+   String s;
+} {
+  <ONEOF>
+   s = Class() { oneof.name(s); }
+   <LBRACE>
+   ( { f = new FieldElement().label(Label.ONE_OF); } Member(f) { oneof.addField(f); })*
+   <RBRACE>
+   { m.addOneOf(oneof); }
+}
+
+void Map(FieldContainer c) : {
+   DataType kt, vt;
+   String n;
+   Token t;
+   FieldElement f = new FieldElement();
+} {
+
+  <MAP>
+  <LESSTHAN>
+   kt = Type()
+   <COMMA>
+   vt = Type()
+  <GRATETHAN>
+  n = Key() <EQ> t = <NUMBER> <SEMI_COLON> { f.name(n).type(DataType.create(kt, vt)).tag(toInt(t)); c.addField(f);  }
+}
+
+void Extensions(MessageElement m) : {
+   Token t1, t2;
+} {
+  <EXTENTIONS> t1 = <NUMBER> <TO> t2 = <NUMBER> <SEMI_COLON> { m.addExtensions(toInt(t1), toInt(t2)); }
+}
+
+void Extend(MessageContainer m, String prefix) : {
+   ExtendElement e;
+   FieldElement f;
+   String s;
+} {
+  <EXTEND> s = Class() { e = new ExtendElement().name(s).prefix(prefix).documentation(comment()); } <LBRACE> (f = Field(e) )+ <RBRACE> { m.addExtend(e); }
+}
+/* END */

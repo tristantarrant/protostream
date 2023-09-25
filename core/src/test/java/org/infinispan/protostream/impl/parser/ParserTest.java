@@ -1,15 +1,13 @@
 package org.infinispan.protostream.impl.parser;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.infinispan.protostream.descriptors.Label;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 
-import org.infinispan.protostream.descriptors.Label;
-import org.junit.Test;
+import static org.junit.Assert.*;
 
 /**
  * @since 15.0
@@ -20,8 +18,8 @@ public class ParserTest {
    @Test
    public void testParser() throws IOException, ParseException {
       try (Reader r = new InputStreamReader(ParserTest.class.getClassLoader().getResourceAsStream("sample_bank_account/bank.proto"))) {
-         ProtoParser p = new ProtoParser(r);
-         ProtoFile input = p.Input();
+         Proto3Parser p = new Proto3Parser(r);
+         ProtoFile input = p.Proto();
 
          assertEquals("sample_bank_account", input.packageName());
          assertEquals(5, input.messages().size());

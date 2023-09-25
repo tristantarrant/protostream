@@ -92,6 +92,8 @@ message User {
    optional fixed64 passwordExpirationDate = 11;
 
    optional int64 qrCode = 12;
+
+   optional string string = 13;
 }
 
 /**
