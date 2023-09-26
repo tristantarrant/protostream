@@ -1,6 +1,5 @@
 package sample_bank_account;
 
-
 /**
  * @Indexed
  * @TypeId(100042)

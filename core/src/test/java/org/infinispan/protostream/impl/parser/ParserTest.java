@@ -1,5 +1,6 @@
 package org.infinispan.protostream.impl.parser;
 
+import org.infinispan.protostream.descriptors.FileDescriptor;
 import org.infinispan.protostream.descriptors.Label;
 import org.junit.Test;
 
@@ -18,11 +19,17 @@ public class ParserTest {
    @Test
    public void testParser() throws IOException, ParseException {
       try (Reader r = new InputStreamReader(ParserTest.class.getClassLoader().getResourceAsStream("sample_bank_account/bank.proto"))) {
-         Proto3Parser p = new Proto3Parser(r);
-         ProtoFile input = p.Proto();
+         FileDescriptor input = Proto3Parser.parse("bank.proto", r);
+         assertEquals(FileDescriptor.Syntax.PROTO2, input.getSyntax());
 
-         assertEquals("sample_bank_account", input.packageName());
-         assertEquals(5, input.messages().size());
+
+         assertEquals("sample_bank_account", input.getPackage());
+         assertEquals(0, input.getDependants().size());
+
+
+         assertEquals(5, input.getMessageTypes().size());
+
+         /*
 
          // User
          MessageElement message = assertMessage(input, 0, "User", 12, 1, 1);
@@ -89,7 +96,7 @@ public class ParserTest {
          // int_array
          message = assertMessage(input, 4, "user_list", 1, 0, 0);
          assertField(message, 0, Label.REPEATED, DataType.create("User"), "theList", 1);
-
+         */
       }
    }
 

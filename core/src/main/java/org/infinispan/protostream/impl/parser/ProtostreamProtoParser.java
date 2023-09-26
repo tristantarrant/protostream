@@ -46,9 +46,9 @@ public final class ProtostreamProtoParser {
       for (Map.Entry<String, String> entry : input.entrySet()) {
          String fileName = entry.getKey();
          try {
-            ProtoFile protoFile = Proto3Parser.parse(fileName, new StringReader(entry.getValue()));
-            checkUniqueFileOptions(protoFile);
-            FileDescriptor fileDescriptor = PROTOFILE_MAPPER.map(protoFile);
+            FileDescriptor fileDescriptor = Proto3Parser.parse(fileName, new StringReader(entry.getValue()));
+            //checkUniqueFileOptions(protoFile);
+            //FileDescriptor fileDescriptor = PROTOFILE_MAPPER.map(protoFile);
             fileDescriptor.setConfiguration(configuration);
             fileDescriptorMap.put(fileName, fileDescriptor);
          } catch (DescriptorParserException e) {

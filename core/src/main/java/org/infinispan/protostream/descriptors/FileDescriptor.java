@@ -1,7 +1,6 @@
 package org.infinispan.protostream.descriptors;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -56,7 +55,7 @@ public final class FileDescriptor {
 
    private final Syntax syntax;
 
-   protected Configuration configuration;
+   private Configuration configuration;
 
    private final String name;
    private final String packageName;
@@ -135,12 +134,12 @@ public final class FileDescriptor {
       syntax = builder.syntax == null ? Syntax.PROTO2 : builder.syntax;
       name = builder.name;
       packageName = builder.packageName;
-      dependencies = Collections.unmodifiableList(builder.dependencies);
-      publicDependencies = Collections.unmodifiableList(builder.publicDependencies);
-      options = Collections.unmodifiableList(builder.options);
-      enumTypes = Collections.unmodifiableList(builder.enumTypes);
-      messageTypes = Collections.unmodifiableList(builder.messageTypes);
-      extendTypes = Collections.unmodifiableList(builder.extendDescriptors);
+      dependencies = List.copyOf(builder.dependencies);
+      publicDependencies = List.copyOf(builder.publicDependencies);
+      options = List.copyOf(builder.options);
+      enumTypes = List.copyOf(builder.enumTypes);
+      messageTypes = List.copyOf(builder.messageTypes);
+      extendTypes = List.copyOf(builder.extendDescriptors);
 
       parsingException = builder.parsingException;
       status = parsingException != null ? Status.PARSING_ERROR : Status.UNRESOLVED;
@@ -457,22 +456,18 @@ public final class FileDescriptor {
             '}';
    }
 
-   public static final class Builder {
+   public static final class Builder implements OptionContainer<Builder> {
 
       private Syntax syntax = Syntax.PROTO2;
       private String name;
       private String packageName;
-      private List<String> dependencies = Collections.emptyList();
-      private List<String> publicDependencies = Collections.emptyList();
-      private List<Option> options = Collections.emptyList();
-      private List<EnumDescriptor> enumTypes = Collections.emptyList();
-      private List<Descriptor> messageTypes = Collections.emptyList();
-      private List<ExtendDescriptor> extendDescriptors = Collections.emptyList();
+      private List<String> dependencies = new ArrayList<>();
+      private List<String> publicDependencies = new ArrayList<>();
+      private List<Option> options = new ArrayList<>();
+      private List<EnumDescriptor> enumTypes = new ArrayList<>();
+      private List<Descriptor> messageTypes = new ArrayList<>();
+      private List<ExtendDescriptor> extendDescriptors = new ArrayList<>();
       private DescriptorParserException parsingException;
-
-      public Builder withSyntax(String syntax) {
-         return withSyntax(Syntax.fromString(syntax));
-      }
 
       public Builder withSyntax(Syntax syntax) {
          this.syntax = syntax;
@@ -494,8 +489,18 @@ public final class FileDescriptor {
          return this;
       }
 
+      public Builder addDependency(String dependency) {
+         this.dependencies.add(dependency);
+         return this;
+      }
+
       public Builder withPublicDependencies(List<String> publicDependencies) {
          this.publicDependencies = publicDependencies;
+         return this;
+      }
+
+      public Builder addPublicDependency(String dependency) {
+         this.publicDependencies.add(dependency);
          return this;
       }
 
@@ -506,6 +511,12 @@ public final class FileDescriptor {
 
       public Builder withOptions(List<Option> options) {
          this.options = options;
+         return this;
+      }
+
+      @Override
+      public Builder addOption(Option option) {
+         this.options.add(option);
          return this;
       }
 

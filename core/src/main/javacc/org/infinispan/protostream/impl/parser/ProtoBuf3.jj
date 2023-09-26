@@ -10,7 +10,9 @@ PARSER_BEGIN(Proto3Parser)
 package org.infinispan.protostream.impl.parser;
 
 import java.io.Reader;import java.util.regex.Pattern;
+import org.infinispan.protostream.descriptors.FileDescriptor;
 import org.infinispan.protostream.descriptors.Label;
+import org.infinispan.protostream.descriptors.OptionContainer;
 
 /**
 * <a href="https://protobuf.dev/reference/protobuf/proto3-spec/">Protocol Buffers 3</a> parser.
@@ -18,10 +20,10 @@ import org.infinispan.protostream.descriptors.Label;
 public class Proto3Parser {
    static final Pattern DECOMMENTIFY = Pattern.compile("(\\s*\\*+\\/|^([ \\t]*\\/\\*+|[ \\t]*\\*[ \\t]*))", Pattern.MULTILINE);
 
-   static ProtoFile parse(String fileName, Reader reader) throws ParseException {
-      ProtoFile f = new Proto3Parser(reader).Proto();
-      f.fileName(fileName);
-      return f;
+   static FileDescriptor parse(String fileName, Reader reader) throws ParseException {
+      FileDescriptor.Builder f = new Proto3Parser(reader).Proto();
+      f.withName(fileName);
+      return f.build();
    }
 
    static void appendComment(StringBuilder s) {
@@ -81,20 +83,20 @@ PARSER_END(Proto3Parser)
 | <BOOLEAN: "true" | "false">
 | <ATTRIBUTE: "required"
             | "optional"
-            | "repeated"> : IDENTIFIER
-| <OPTION: "option">
+            | "repeated"> : IDSTATE
+| <OPTION: "option"> : OPTSTATE
 | <IMPORT: "import">
 | <PUBLIC: "public">
 | <WEAK: "weak">
-| <PACKAGE: "package"> : IDENTIFIER
+| <PACKAGE: "package"> : IDSTATE
 | <SERVICE: "service">
-| <MESSAGE: "message"> : IDENTIFIER
-| <ENUM: "enum"> : IDENTIFIER
-| <ONEOF: "oneof"> : IDENTIFIER
+| <MESSAGE: "message"> : IDSTATE
+| <ENUM: "enum"> : IDSTATE
+| <ONEOF: "oneof"> : IDSTATE
 | <GROUP: "group">
 | <EXTENSIONS: "extensions">
 | <EXTEND: "extend">
-| <MAP: "map"> : IDENTIFIER
+| <MAP: "map"> : IDSTATE
 | <RESERVED: "reserved">
 | <RETURNS: "returns">
 | <STREAM: "stream">
@@ -103,16 +105,20 @@ PARSER_END(Proto3Parser)
 | <DOUBLE: ("0" | (["-"])?["1"-"9"](["0"-"9"])*) "." (["0"-"9"])*>
 }
 
-<DEFAULT, IDENTIFIER> TOKEN : {
+<DEFAULT, IDSTATE> TOKEN : {
   <IDENT: ["_","a"-"z","A"-"Z"] (["_","a"-"z","A"-"Z","0"-"9"])*> : DEFAULT
 | <FULLIDENT: ["_","a"-"z","A"-"Z"] (["_","a"-"z","A"-"Z","0"-"9"])* ("." ["_","a"-"z","A"-"Z"] (["_","a"-"z","A"-"Z","0"-"9"])*)+ > : DEFAULT
 }
 
-ProtoFile Proto() : {
-    ProtoFile p = new ProtoFile();
+<OPTSTATE> TOKEN : {
+   <OPTIONNAME: ["_","a"-"z","A"-"Z"] (["_","a"-"z","A"-"Z","0"-"9"])* ("." ["_","a"-"z","A"-"Z"] (["_","a"-"z","A"-"Z","0"-"9"])*)+ > : DEFAULT
+}
+
+FileDescriptor.Builder Proto() : {
+    FileDescriptor.Builder f = new FileDescriptor.Builder();
 }
 {
-    [ Syntax() ] (Import() | Package() | Option() | TopLevelDef() | EmptyStatement() )+ <EOF> { return p; }
+    [ Syntax(f) ] (Import(f) | Package(f) | Option(f) | TopLevelDef() | EmptyStatement() )+ <EOF> { return f; }
 }
 
 void EmptyStatement() : {}
@@ -125,29 +131,31 @@ void TopLevelDef() : {}
     Message() | Enum() | Service()
 }
 
-void Syntax() : {}
+void Syntax(FileDescriptor.Builder f) : {
+    Token t;
+}
 {
-    <SYNTAX> <EQ> <STRLIT> <SEMI_COLON>
+    <SYNTAX> <EQ> t = <STRLIT> <SEMI_COLON> { f.withSyntax(FileDescriptor.Syntax.fromString(unquote(t))); }
 }
 
-void Import() : {}
+void Import(FileDescriptor.Builder f) : {
+    boolean pub = false;
+    Token t;
+}
 {
-    <IMPORT> [ <WEAK> | <PUBLIC> ] <STRLIT> <SEMI_COLON>
+    <IMPORT> [ <WEAK> | <PUBLIC> { pub = true; } ] t = <STRLIT> <SEMI_COLON> { if (pub) f.addPublicDependency(t.image); else f.addDependency(t.image); }
 }
 
-void Package() : {}
+void Package(FileDescriptor.Builder f) : {
+    Token t;
+}
 {
-    <PACKAGE> (<IDENT> | <FULLIDENT>) <SEMI_COLON>
+    <PACKAGE> ( t = <IDENT> | t = <FULLIDENT>) <SEMI_COLON> { f.withPackageName(t.image); }
 }
 
-void Option() : {}
+void Option(OptionContainer o) : {}
 {
-    <OPTION> OptionName() <EQ> Constant() <SEMI_COLON>
-}
-
-void OptionName() : {}
-{
-    <IDENT> | <LPAREN> [<DOT>] FullIdent() <RPAREN>
+    <OPTION> <OPTIONNAME>  <EQ> Constant() <SEMI_COLON>
 }
 
 void Enum() : {}
