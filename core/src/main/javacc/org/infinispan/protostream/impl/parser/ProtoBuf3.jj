@@ -11,6 +11,7 @@ package org.infinispan.protostream.impl.parser;
 
 import java.io.Reader;
 import java.util.regex.Pattern;
+import org.infinispan.protostream.descriptors.DataType;
 import org.infinispan.protostream.descriptors.Descriptor;
 import org.infinispan.protostream.descriptors.EnumContainer;
 import org.infinispan.protostream.descriptors.EnumDescriptor;
@@ -200,12 +201,13 @@ void EnumValueOption(OptionContainer c) : {
 
 void Field(FieldContainer c) : {
    FieldDescriptor.Builder f = new FieldDescriptor.Builder();
+   String type;
    Token label;
    Token name;
    Token number;
 }
 {
-    [ label = <ATTRIBUTE> { f.withLabel(Label.fromString(label.image)); } ] Type() name = <IDENT> <EQ> number = <NUMBER> [ <LBRACKET> FieldOptions(f) <RBRACKET> ] <SEMI_COLON> { c.addField(f.withName(name.image).withNumber(toInt(number)).build()); }
+    [ label = <ATTRIBUTE> { f.withLabel(Label.fromString(label.image)); } ] type = Type() name = <IDENT> <EQ> number = <NUMBER> [ <LBRACKET> FieldOptions(f) <RBRACKET> ] <SEMI_COLON> { c.addField(f.withTypeName(type).withName(name.image).withNumber(toInt(number)).build()); }
 }
 
 void FieldOptions(OptionContainer c) : {}
@@ -257,16 +259,17 @@ void OneOf(Descriptor.Builder m) : {
 void OneOfField(OneOfDescriptor.Builder o) : {
    FieldDescriptor.Builder f = new FieldDescriptor.Builder();
    String name;
+   String type;
 }
 {
-    Type() name = FieldName() <EQ> <NUMBER> [ <LBRACKET> FieldOptions(f) <RBRACKET> ] <SEMI_COLON> { o.addField(f.withName(name).build()); }
+    type = Type() name = FieldName() <EQ> <NUMBER> [ <LBRACKET> FieldOptions(f) <RBRACKET> ] <SEMI_COLON> { o.addField(f.withTypeName(type).withName(name).build()); }
 }
 
-DataType Type() : {
+String Type() : {
     Token t;
 }
 {
-    (t = <IDENT> | t = <FULLIDENT>) { return DataType.create(t.image); }
+    (t = <IDENT> | t = <FULLIDENT>) { return t.image; }
 }
 
 void Reserved(ReservedContainer c) : {}

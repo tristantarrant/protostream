@@ -1,6 +1,5 @@
 package org.infinispan.protostream.descriptors.namespace;
 
-import java.util.Collections;
 import java.util.Map;
 
 import org.infinispan.protostream.descriptors.GenericDescriptor;
@@ -14,7 +13,7 @@ public final class LocalNamespace implements Namespace {
    private final Map<String, GenericDescriptor> localDefinitions;
 
    LocalNamespace(Map<String, GenericDescriptor> localDefinitions) {
-      this.localDefinitions = Collections.unmodifiableMap(localDefinitions);
+      this.localDefinitions = Map.copyOf(localDefinitions);
    }
 
    @Override

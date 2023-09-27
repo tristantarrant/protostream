@@ -1,7 +1,5 @@
 package org.infinispan.protostream.descriptors;
 
-import static java.util.Collections.unmodifiableList;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,7 +25,7 @@ public final class EnumValueDescriptor {
       this.name = builder.name;
       this.number = builder.number;
       this.documentation = builder.documentation;
-      this.options = unmodifiableList(builder.options);
+      this.options = List.copyOf(builder.options);
    }
 
    public String getName() {

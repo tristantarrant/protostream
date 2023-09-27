@@ -1,14 +1,18 @@
 package org.infinispan.protostream.impl.parser;
 
-import org.infinispan.protostream.descriptors.FileDescriptor;
-import org.infinispan.protostream.descriptors.Label;
-import org.junit.Test;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 
-import static org.junit.Assert.*;
+import org.infinispan.protostream.descriptors.Descriptor;
+import org.infinispan.protostream.descriptors.FileDescriptor;
+import org.infinispan.protostream.descriptors.Label;
+import org.infinispan.protostream.descriptors.MessageContainer;
+import org.junit.Test;
 
 /**
  * @since 15.0
@@ -26,11 +30,8 @@ public class ParserTest {
          assertEquals("sample_bank_account", input.getPackage());
          assertEquals(0, input.getDependants().size());
 
-
          assertEquals(5, input.getMessageTypes().size());
-
-         /*
-
+/*
          // User
          MessageElement message = assertMessage(input, 0, "User", 12, 1, 1);
          assertField(message, 0, Label.REQUIRED, DataType.ScalarType.INT32, "id", 1);
@@ -146,12 +147,12 @@ public class ParserTest {
       }
    }
 
-   private static MessageElement assertMessage(MessageContainer<?> container, int index, String name, int fieldCount, int messageCount, int enumCount) {
-      MessageElement message = container.messages().get(index);
-      assertEquals(name, message.name());
-      assertEquals("Message " + name + " fields", fieldCount, message.fields().size());
-      assertEquals("Message " + name + " messages", messageCount, message.messages().size());
-      assertEquals("Message " + name + " enums", enumCount, message.enums().size());
+   private static Descriptor assertMessage(MessageContainer<?> container, int index, String name, int fieldCount, int messageCount, int enumCount) {
+      Descriptor message = null;//container.messages().get(index);
+      assertEquals(name, message.getName());
+      assertEquals("Message " + name + " fields", fieldCount, message.getFields().size());
+      assertEquals("Message " + name + " messages", messageCount, message.getNestedTypes().size());
+      assertEquals("Message " + name + " enums", enumCount, message.getEnumTypes().size());
       return message;
    }
 }

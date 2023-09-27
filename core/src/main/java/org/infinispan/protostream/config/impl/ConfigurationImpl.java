@@ -1,6 +1,5 @@
 package org.infinispan.protostream.config.impl;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -97,7 +96,7 @@ public final class ConfigurationImpl implements Configuration {
       private final boolean logUndefinedAnnotations;
 
       AnnotationsConfigImpl(Map<String, AnnotationConfigurationImpl> annotations, boolean logUndefinedAnnotations) {
-         this.annotations = Collections.unmodifiableMap(annotations);
+         this.annotations = Map.copyOf(annotations);
          this.logUndefinedAnnotations = logUndefinedAnnotations;
       }
 
