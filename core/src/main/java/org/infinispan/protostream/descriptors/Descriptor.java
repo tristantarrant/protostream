@@ -1,10 +1,12 @@
 package org.infinispan.protostream.descriptors;
 
-import static java.util.Collections.unmodifiableList;
-
+import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.infinispan.protostream.DescriptorParserException;
 import org.infinispan.protostream.config.AnnotationConfiguration;
@@ -26,23 +28,26 @@ public final class Descriptor extends AnnotatedDescriptorImpl implements Generic
    private final List<OneOfDescriptor> oneofs;
    private final List<Descriptor> nestedMessageTypes;
    private final List<EnumDescriptor> nestedEnumTypes;
-   private final Map<Integer, FieldDescriptor> fieldsByNumber = new HashMap<>();
-   private final Map<String, FieldDescriptor> fieldsByName = new HashMap<>();
+   private final Map<Integer, FieldDescriptor> fieldsByNumber;
+   private final Map<String, FieldDescriptor> fieldsByName;
    private FileDescriptor fileDescriptor;
    private Descriptor containingType;
 
    private Descriptor(Builder builder) {
       super(builder.name, builder.fullName, builder.documentation);
-      this.options = unmodifiableList(builder.options);
-      this.fields = unmodifiableList(builder.fields);
+      this.options = List.copyOf(builder.options);
+      this.fields = List.copyOf(builder.fields);
+      this.oneofs = List.copyOf(builder.oneOfs);
+      int totalFields = this.fields.size() + this.oneofs.size();
+      fieldsByNumber = new HashMap<>(totalFields);
+      fieldsByName = new HashMap<>(totalFields);
       addFields(builder.fields);
-      this.oneofs = unmodifiableList(builder.oneofs);
       for (OneOfDescriptor oneOf : oneofs) {
          addFields(oneOf.getFields());
          oneOf.setContainingMessage(this);
       }
-      this.nestedMessageTypes = unmodifiableList(builder.nestedMessageTypes);
-      this.nestedEnumTypes = unmodifiableList(builder.nestedEnumTypes);
+      this.nestedMessageTypes = List.copyOf(builder.nestedMessageTypes);
+      this.nestedEnumTypes = List.copyOf(builder.nestedEnumTypes);
       for (Descriptor nested : nestedMessageTypes) {
          nested.setContainingType(this);
       }
@@ -175,14 +180,16 @@ public final class Descriptor extends AnnotatedDescriptorImpl implements Generic
       return "Descriptor{fullName=" + getFullName() + '}';
    }
 
-   public static final class Builder {
+   public static final class Builder implements OptionContainer<Builder>, FieldContainer<Builder>, EnumContainer<Builder>, MessageContainer<Builder>, ReservedContainer<Builder> {
       private String name, fullName;
-      private List<Option> options;
-      private List<FieldDescriptor> fields;
-      private List<OneOfDescriptor> oneofs;
-      private List<Descriptor> nestedMessageTypes;
-      private List<EnumDescriptor> nestedEnumTypes;
+      private List<Option> options = new ArrayList<>();
+      private List<FieldDescriptor> fields = new ArrayList<>();
+      private List<OneOfDescriptor> oneOfs = new ArrayList<>();
+      private List<Descriptor> nestedMessageTypes = new ArrayList<>();
+      private List<EnumDescriptor> nestedEnumTypes = new ArrayList<>();
       private String documentation;
+      private final BitSet reservedNumbers = new BitSet();
+      private final Set<String> reservedNames = new HashSet<>();
 
       public Builder withName(String name) {
          this.name = name;
@@ -205,7 +212,7 @@ public final class Descriptor extends AnnotatedDescriptorImpl implements Generic
       }
 
       public Builder withOneOfs(List<OneOfDescriptor> oneofs) {
-         this.oneofs = oneofs;
+         this.oneOfs = oneofs;
          return this;
       }
 
@@ -221,6 +228,53 @@ public final class Descriptor extends AnnotatedDescriptorImpl implements Generic
 
       public Builder withDocumentation(String documentation) {
          this.documentation = documentation;
+         return this;
+      }
+
+      @Override
+      public Builder addField(FieldDescriptor field) {
+         this.fields.add(field);
+         return this;
+      }
+
+      public Builder addOneOf(OneOfDescriptor oneOf) {
+         this.oneOfs.add(oneOf);
+         return this;
+      }
+
+      @Override
+      public Builder addOption(Option option) {
+         this.options.add(option);
+         return this;
+      }
+
+      @Override
+      public Builder addEnum(EnumDescriptor enumDescriptor) {
+         this.nestedEnumTypes.add(enumDescriptor);
+         return this;
+      }
+
+      @Override
+      public Builder addMessage(Descriptor message) {
+         this.nestedMessageTypes.add(message);
+         return this;
+      }
+
+      @Override
+      public Builder addReserved(int number) {
+         this.reservedNumbers.set(number);
+         return this;
+      }
+
+      @Override
+      public Builder addReserved(int from, int to) {
+         this.reservedNumbers.set(from, to + 1);
+         return this;
+      }
+
+      @Override
+      public Builder addReserved(String name) {
+         this.reservedNames.add(name);
          return this;
       }
 

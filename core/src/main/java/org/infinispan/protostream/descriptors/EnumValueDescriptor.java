@@ -2,6 +2,7 @@ package org.infinispan.protostream.descriptors;
 
 import static java.util.Collections.unmodifiableList;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -86,11 +87,11 @@ public final class EnumValueDescriptor {
       return "EnumValueDescriptor{fullName=" + fullName + '}';
    }
 
-   public static final class Builder {
+   public static final class Builder implements OptionContainer<Builder> {
       private String name;
       private int number;
       private String documentation;
-      private List<Option> options;
+      private List<Option> options = new ArrayList<>();
 
       public Builder withName(String name) {
          this.name = name;
@@ -109,6 +110,12 @@ public final class EnumValueDescriptor {
 
       public Builder withOptions(List<Option> options) {
          this.options = options;
+         return this;
+      }
+
+      @Override
+      public Builder addOption(Option option) {
+         this.options.add(option);
          return this;
       }
 

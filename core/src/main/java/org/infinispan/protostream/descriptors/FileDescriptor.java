@@ -456,7 +456,7 @@ public final class FileDescriptor {
             '}';
    }
 
-   public static final class Builder implements OptionContainer<Builder> {
+   public static final class Builder implements MessageContainer<Builder>, OptionContainer<Builder>, EnumContainer<Builder> {
 
       private Syntax syntax = Syntax.PROTO2;
       private String name;
@@ -525,8 +525,19 @@ public final class FileDescriptor {
          return this;
       }
 
+      public Builder addEnum(EnumDescriptor enumDescriptor) {
+         this.enumTypes.add(enumDescriptor);
+         return this;
+      }
+
       public Builder withMessageTypes(List<Descriptor> messageTypes) {
          this.messageTypes = messageTypes;
+         return this;
+      }
+
+      @Override
+      public Builder addMessage(Descriptor message) {
+         this.messageTypes.add(message);
          return this;
       }
 

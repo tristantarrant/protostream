@@ -1,9 +1,12 @@
 package org.infinispan.protostream.descriptors;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.infinispan.protostream.DescriptorParserException;
 import org.infinispan.protostream.config.AnnotationConfiguration;
@@ -22,15 +25,17 @@ public final class EnumDescriptor extends AnnotatedDescriptorImpl implements Gen
    private Integer typeId;
    private final List<Option> options;
    private final List<EnumValueDescriptor> values;
-   private final Map<Integer, EnumValueDescriptor> valueByNumber = new HashMap<>();
-   private final Map<String, EnumValueDescriptor> valueByName = new HashMap<>();
+   private final Map<Integer, EnumValueDescriptor> valueByNumber;
+   private final Map<String, EnumValueDescriptor> valueByName;
    private FileDescriptor fileDescriptor;
    private Descriptor containingType;
 
    private EnumDescriptor(Builder builder) {
       super(builder.name, builder.fullName, builder.documentation);
-      this.options = Collections.unmodifiableList(builder.options);
-      this.values = Collections.unmodifiableList(builder.values);
+      this.options = List.copyOf(builder.options);
+      this.values = List.copyOf(builder.values);
+      this.valueByNumber = new HashMap<>(values.size());
+      this.valueByName = new HashMap<>(values.size());
       for (EnumValueDescriptor value : values) {
          if (name.equals(value.getName())) {
             throw new DescriptorParserException("Enum constant '" + value.getName() + "' clashes with enum type name: " + fullName);
@@ -127,12 +132,14 @@ public final class EnumDescriptor extends AnnotatedDescriptorImpl implements Gen
       return "EnumDescriptor{fullName=" + getFullName() + '}';
    }
 
-   public static final class Builder {
+   public static final class Builder implements OptionContainer<Builder>, ReservedContainer<Builder> {
       private String name;
       private String fullName;
-      private List<Option> options;
-      private List<EnumValueDescriptor> values;
+      private List<Option> options = new ArrayList<>();
+      private List<EnumValueDescriptor> values = new ArrayList<>();
       private String documentation;
+      private final BitSet reservedNumbers = new BitSet();
+      private final Set<String> reservedNames = new HashSet<>();
 
       public Builder withName(String name) {
          this.name = name;
@@ -149,13 +156,39 @@ public final class EnumDescriptor extends AnnotatedDescriptorImpl implements Gen
          return this;
       }
 
+      @Override
+      public Builder addOption(Option option) {
+         this.options.add(option);
+         return this;
+      }
+
       public Builder withValues(List<EnumValueDescriptor> values) {
          this.values = values;
          return this;
       }
 
+      public Builder addValue(EnumValueDescriptor value) {
+         this.values.add(value);
+         return this;
+      }
+
       public Builder withDocumentation(String documentation) {
          this.documentation = documentation;
+         return this;
+      }
+
+      public Builder addReserved(int number) {
+         reservedNumbers.set(number);
+         return this;
+      }
+
+      public Builder addReserved(int from, int to) {
+         reservedNumbers.set(from, to + 1);
+         return this;
+      }
+
+      public Builder addReserved(String name) {
+         reservedNames.add(name);
          return this;
       }
 

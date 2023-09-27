@@ -1,7 +1,6 @@
 package org.infinispan.protostream.descriptors;
 
-import static java.util.Collections.unmodifiableList;
-
+import java.util.ArrayList;
 import java.util.List;
 
 import org.infinispan.protostream.DescriptorParserException;
@@ -34,7 +33,7 @@ public final class FieldDescriptor extends AnnotatedDescriptorImpl implements An
       super(builder.name, null, builder.documentation);
       number = builder.number;
       label = builder.label;
-      options = unmodifiableList(builder.options);
+      options = List.copyOf(builder.options);
       typeName = builder.typeName;
       type = Type.primitiveFromString(typeName);
       defaultValue = builder.defaultValue;
@@ -166,12 +165,12 @@ public final class FieldDescriptor extends AnnotatedDescriptorImpl implements An
             '}';
    }
 
-   public static final class Builder {
+   public static final class Builder implements OptionContainer<Builder> {
       private String typeName;
       private int number;
       private String name;
       private Label label;
-      private List<Option> options;
+      private List<Option> options = new ArrayList<>();
       private String defaultValue;
       private boolean isExtension;
       private String documentation;
@@ -213,6 +212,12 @@ public final class FieldDescriptor extends AnnotatedDescriptorImpl implements An
 
       public Builder withDocumentation(String documentation) {
          this.documentation = documentation;
+         return this;
+      }
+
+      @Override
+      public Builder addOption(Option option) {
+         this.options.add(option);
          return this;
       }
 

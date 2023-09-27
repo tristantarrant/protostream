@@ -9,10 +9,21 @@ PARSER_BEGIN(Proto3Parser)
 
 package org.infinispan.protostream.impl.parser;
 
-import java.io.Reader;import java.util.regex.Pattern;
+import java.io.Reader;
+import java.util.regex.Pattern;
+import org.infinispan.protostream.descriptors.Descriptor;
+import org.infinispan.protostream.descriptors.EnumContainer;
+import org.infinispan.protostream.descriptors.EnumDescriptor;
+import org.infinispan.protostream.descriptors.EnumValueDescriptor;
+import org.infinispan.protostream.descriptors.FieldContainer;
+import org.infinispan.protostream.descriptors.FieldDescriptor;
 import org.infinispan.protostream.descriptors.FileDescriptor;
 import org.infinispan.protostream.descriptors.Label;
+import org.infinispan.protostream.descriptors.MessageContainer;
+import org.infinispan.protostream.descriptors.OneOfDescriptor;
+import org.infinispan.protostream.descriptors.Option;
 import org.infinispan.protostream.descriptors.OptionContainer;
+import org.infinispan.protostream.descriptors.ReservedContainer;
 
 /**
 * <a href="https://protobuf.dev/reference/protobuf/proto3-spec/">Protocol Buffers 3</a> parser.
@@ -118,7 +129,7 @@ FileDescriptor.Builder Proto() : {
     FileDescriptor.Builder f = new FileDescriptor.Builder();
 }
 {
-    [ Syntax(f) ] (Import(f) | Package(f) | Option(f) | TopLevelDef() | EmptyStatement() )+ <EOF> { return f; }
+    [ Syntax(f) ] (Import(f) | Package(f) | Option(f) | TopLevelDef(f) | EmptyStatement() )+ <EOF> { return f; }
 }
 
 void EmptyStatement() : {}
@@ -126,9 +137,9 @@ void EmptyStatement() : {}
     <SEMI_COLON>
 }
 
-void TopLevelDef() : {}
+void TopLevelDef(FileDescriptor.Builder f) : {}
 {
-    Message() | Enum() | Service()
+    Message(f) | Enum(f) | Service(f)
 }
 
 void Syntax(FileDescriptor.Builder f) : {
@@ -158,44 +169,58 @@ void Option(OptionContainer o) : {}
     <OPTION> <OPTIONNAME>  <EQ> Constant() <SEMI_COLON>
 }
 
-void Enum() : {}
+void Enum(EnumContainer c) : {
+   EnumDescriptor.Builder e = new EnumDescriptor.Builder();
+   String name;
+}
 {
-    <ENUM> EnumName() EnumBody()
+    <ENUM> name = EnumName() EnumBody(e) { c.addEnum(e.withName(name).build()); }
 }
 
-void EnumBody() : {}
+void EnumBody(EnumDescriptor.Builder e) : {}
 {
-    <LBRACE> ( Option() | EnumField() | EmptyStatement() | Reserved() )+ <RBRACE>
+    <LBRACE> ( Option(e) | EnumField(e) | EmptyStatement() | Reserved(e) )+ <RBRACE>
 }
 
-void EnumField() : {}
+void EnumField(EnumDescriptor.Builder e) : {
+   EnumValueDescriptor.Builder v = new EnumValueDescriptor.Builder();
+   Token t;
+}
 {
-    <IDENT> <EQ> <NUMBER> [ <LBRACKET> EnumValueOption() ( <COMMA> EnumValueOption() )+ <RBRACKET> ]
+    t = <IDENT> { v.withName(t.image); }<EQ> t = <NUMBER> { v.withTag(toInt(t)); } [ <LBRACKET> EnumValueOption(v) ( <COMMA> EnumValueOption(v) )+ <RBRACKET> ] { e.addValue(v.build()); }
 }
 
-void EnumValueOption() : {}
+void EnumValueOption(OptionContainer c) : {
+   Token name;
+   String value;
+}
 {
-    OptionName() <EQ> Constant()
+    name = <OPTIONNAME> <EQ> value = Constant() { c.addOption(new Option(name.image, value)); }
 }
 
-void Field() : {}
+void Field(FieldContainer c) : {
+   FieldDescriptor.Builder f = new FieldDescriptor.Builder();
+   Token label;
+   Token name;
+   Token number;
+}
 {
-    [ <ATTRIBUTE> ] Type() <IDENT> <EQ> <NUMBER> [ <LBRACKET> FieldOptions() <RBRACKET> ] <SEMI_COLON>
+    [ label = <ATTRIBUTE> { f.withLabel(Label.fromString(label.image)); } ] Type() name = <IDENT> <EQ> number = <NUMBER> [ <LBRACKET> FieldOptions(f) <RBRACKET> ] <SEMI_COLON> { c.addField(f.withName(name.image).withNumber(toInt(number)).build()); }
 }
 
-void FieldOptions() : {}
+void FieldOptions(OptionContainer c) : {}
 {
-    FieldOption() ( <COMMA> FieldOption() )*
+    FieldOption(c) ( <COMMA> FieldOption(c) )*
 }
 
-void FieldOption() : {}
+void FieldOption(OptionContainer c) : {}
 {
-    OptionName() <EQ> Constant()
+    <OPTIONNAME> <EQ> Constant()
 }
 
-void MapField() : {}
+void MapField(Descriptor.Builder m) : {}
 {
-    <MAP> <LT> KeyType() <COMMA> Type() <GT> MapName() <EQ> <NUMBER> [ <LPAREN> FieldOptions() <RPAREN> ] <SEMI_COLON>
+    <MAP> <LT> KeyType() <COMMA> Type() <GT> MapName() <EQ> <NUMBER> [ <LPAREN> FieldOptions(null) <RPAREN> ] <SEMI_COLON>
 }
 
 void KeyType() : {}
@@ -203,29 +228,38 @@ void KeyType() : {}
     Type()
 }
 
-void Message() : {}
+void Message(MessageContainer c) : {
+   Descriptor.Builder m = new Descriptor.Builder();
+   String name;
+}
 {
-    <MESSAGE> MessageName() MessageBody()
+    <MESSAGE> name = MessageName() MessageBody(m) { c.addMessage(m.withName(name).build()); }
 }
 
-void MessageBody() : {}
+void MessageBody(Descriptor.Builder m) : {}
 {
-    <LBRACE> ( Field() | Enum() | Message() | Option() | OneOf() | MapField() | Reserved() | EmptyStatement() )+ <RBRACE>
+    <LBRACE> ( Field(m) | Enum(m) | Message(m) | Option(m) | OneOf(m) | MapField(m) | Reserved(m) | EmptyStatement() )+ <RBRACE>
 }
 
 void MessageValue() : {}
 {
-    <LBRACE> Message() <RBRACE> | <LT> Message() <GT>
+    <LBRACE> Message(null) <RBRACE> | <LT> Message(null) <GT>
 }
 
-void OneOf() : {}
+void OneOf(Descriptor.Builder m) : {
+   OneOfDescriptor.Builder o = new OneOfDescriptor.Builder();
+   String name;
+}
 {
-    <ONEOF> OneOfName() <LBRACE> ( Option() | OneOfField() )+ <RBRACE>
+    <ONEOF> name = OneOfName() <LBRACE> ( Option(m) | OneOfField(o) )+ <RBRACE> { m.addOneOf( o.withName(name).build()); }
 }
 
-void OneOfField() : {}
+void OneOfField(OneOfDescriptor.Builder o) : {
+   FieldDescriptor.Builder f = new FieldDescriptor.Builder();
+   String name;
+}
 {
-    Type() FieldName() <EQ> <NUMBER> [ <LBRACKET> FieldOptions() <RBRACKET> ] <SEMI_COLON>
+    Type() name = FieldName() <EQ> <NUMBER> [ <LBRACKET> FieldOptions(f) <RBRACKET> ] <SEMI_COLON> { o.addField(f.withName(name).build()); }
 }
 
 DataType Type() : {
@@ -235,39 +269,41 @@ DataType Type() : {
     (t = <IDENT> | t = <FULLIDENT>) { return DataType.create(t.image); }
 }
 
-void Reserved() : {}
+void Reserved(ReservedContainer c) : {}
 {
-    <RESERVED> ( Ranges() | StrFieldNames() )+ <SEMI_COLON>
+    <RESERVED> ( Ranges(c) | ReservedNames(c) )+ <SEMI_COLON>
 }
 
-void Ranges() : {}
+void Ranges(ReservedContainer c) : {}
 {
-    Range() ( <COMMA> Range() )*
+    Range(c) ( <COMMA> Range(c) )*
 }
 
-void Range() : {}
+void Range(ReservedContainer c) : {}
 {
     <NUMBER> [ <TO> <NUMBER> ]
 }
 
-void StrFieldNames() : {}
+void ReservedNames(ReservedContainer c) : {}
 {
     <STRLIT> ( <COMMA> <STRLIT> )*
 }
 
 void Rpc() : {}
 {
-    <RPC> RpcName() <LPAREN> [ <STREAM> ] NamedType() <RPAREN> <RETURNS> <LPAREN> [ <STREAM> ] NamedType() <RPAREN> (( <LBRACE> (Option() | EmptyStatement() )+ <RBRACE> ) | <SEMI_COLON> )
+    <RPC> RpcName() <LPAREN> [ <STREAM> ] NamedType() <RPAREN> <RETURNS> <LPAREN> [ <STREAM> ] NamedType() <RPAREN> (( <LBRACE> (Option(null) | EmptyStatement() )+ <RBRACE> ) | <SEMI_COLON> )
 }
 
-void Service() : {}
+void Service(FileDescriptor.Builder f) : {}
 {
-    <SERVICE> ServiceName() <LBRACE> (Option() | Rpc() | EmptyStatement() )+ <RBRACE>
+    <SERVICE> ServiceName() <LBRACE> (Option(f) | Rpc() | EmptyStatement() )+ <RBRACE>
 }
 
-void Constant() : {}
+String Constant() : {
+   Token t;
+}
 {
-    FullIdent() | <NUMBER> | <DOUBLE> | <STRLIT> | <BOOLEAN> | MessageValue()
+    FullIdent() | t = <NUMBER> { return t.image; } | t = <DOUBLE> { return t.image; } | t = <STRLIT> { return unquote(t); } | t = <BOOLEAN> { return t.image; } | MessageValue() { return null; }
 }
 
 String FullIdent() : {
