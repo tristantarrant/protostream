@@ -146,6 +146,10 @@ public final class EnumDescriptor extends AnnotatedDescriptorImpl implements Gen
          return this;
       }
 
+      String getName() {
+         return name;
+      }
+
       public Builder withFullName(String fullName) {
          this.fullName = fullName;
          return this;
@@ -167,8 +171,8 @@ public final class EnumDescriptor extends AnnotatedDescriptorImpl implements Gen
          return this;
       }
 
-      public Builder addValue(EnumValueDescriptor value) {
-         this.values.add(value);
+      public Builder addValue(EnumValueDescriptor.Builder value) {
+         this.values.add(value.build());
          return this;
       }
 

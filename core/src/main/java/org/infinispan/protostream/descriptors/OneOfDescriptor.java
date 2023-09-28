@@ -67,8 +67,8 @@ public final class OneOfDescriptor {
       }
 
       @Override
-      public Builder addField(FieldDescriptor field) {
-         this.fields.add(field);
+      public Builder addField(FieldDescriptor.Builder field) {
+         this.fields.add(field.build());
          return this;
       }
 

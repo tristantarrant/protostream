@@ -1,16 +1,13 @@
 package org.infinispan.protostream.impl.parser;
 
+import java.io.StringReader;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import org.infinispan.protostream.DescriptorParserException;
 import org.infinispan.protostream.FileDescriptorSource;
 import org.infinispan.protostream.config.Configuration;
 import org.infinispan.protostream.descriptors.FileDescriptor;
-import org.infinispan.protostream.impl.parser.mappers.ProtofileMapper;
-
-import java.io.StringReader;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Parser for .proto files based on the Protoparser.
@@ -20,8 +17,7 @@ import java.util.Set;
  * @since 2.0
  */
 public final class ProtostreamProtoParser {
-
-   private static final ProtofileMapper PROTOFILE_MAPPER = new ProtofileMapper();
+   static ThreadLocal<StringBuilder> comments = ThreadLocal.withInitial(StringBuilder::new);
 
    private final Configuration configuration;
 
@@ -48,7 +44,6 @@ public final class ProtostreamProtoParser {
          try {
             FileDescriptor fileDescriptor = Proto3Parser.parse(fileName, new StringReader(entry.getValue()));
             //checkUniqueFileOptions(protoFile);
-            //FileDescriptor fileDescriptor = PROTOFILE_MAPPER.map(protoFile);
             fileDescriptor.setConfiguration(configuration);
             fileDescriptorMap.put(fileName, fileDescriptor);
          } catch (DescriptorParserException e) {
@@ -62,15 +57,6 @@ public final class ProtostreamProtoParser {
          }
       }
       return fileDescriptorMap;
-   }
-
-   private void checkUniqueFileOptions(ProtoFile protoFile) {
-      Set<String> optionNames = new HashSet<>(protoFile.options().size());
-      for (OptionElement optionElement : protoFile.options()) {
-         if (!optionNames.add(optionElement.name())) {
-            throw new DescriptorParserException(protoFile.fileName() + ": Option \"" + optionElement.name() + "\" was already set.");
-         }
-      }
    }
 
    /**

@@ -484,6 +484,11 @@ public final class FileDescriptor {
          return this;
       }
 
+      @Override
+      public String getFullName() {
+         return packageName;
+      }
+
       public Builder withDependencies(List<String> dependencies) {
          this.dependencies = dependencies;
          return this;
@@ -525,8 +530,9 @@ public final class FileDescriptor {
          return this;
       }
 
-      public Builder addEnum(EnumDescriptor enumDescriptor) {
-         this.enumTypes.add(enumDescriptor);
+      @Override
+      public Builder addEnum(EnumDescriptor.Builder enumDescriptor) {
+         this.enumTypes.add(enumDescriptor.withFullName(packageName + '.' + enumDescriptor.getName()).build());
          return this;
       }
 
@@ -536,8 +542,8 @@ public final class FileDescriptor {
       }
 
       @Override
-      public Builder addMessage(Descriptor message) {
-         this.messageTypes.add(message);
+      public Builder addMessage(Descriptor.Builder message) {
+         this.messageTypes.add(message.withFullName(packageName + '.' + message.getName()).build());
          return this;
       }
 

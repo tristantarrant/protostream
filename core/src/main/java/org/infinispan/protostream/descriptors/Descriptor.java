@@ -21,7 +21,6 @@ import org.infinispan.protostream.impl.AnnotatedDescriptorImpl;
  * @since 2.0
  */
 public final class Descriptor extends AnnotatedDescriptorImpl implements GenericDescriptor {
-
    private Integer typeId;
    private final List<Option> options;
    private final List<FieldDescriptor> fields;
@@ -32,12 +31,16 @@ public final class Descriptor extends AnnotatedDescriptorImpl implements Generic
    private final Map<String, FieldDescriptor> fieldsByName;
    private FileDescriptor fileDescriptor;
    private Descriptor containingType;
+   private final BitSet reservedNumbers;
+   private final Set<String> reservedNames;
 
    private Descriptor(Builder builder) {
       super(builder.name, builder.fullName, builder.documentation);
       this.options = List.copyOf(builder.options);
       this.fields = List.copyOf(builder.fields);
       this.oneofs = List.copyOf(builder.oneOfs);
+      this.reservedNumbers = builder.reservedNumbers;
+      this.reservedNames = Set.copyOf(builder.reservedNames);
       int totalFields = this.fields.size() + this.oneofs.size();
       fieldsByNumber = new HashMap<>(totalFields);
       fieldsByName = new HashMap<>(totalFields);
@@ -180,6 +183,14 @@ public final class Descriptor extends AnnotatedDescriptorImpl implements Generic
       return "Descriptor{fullName=" + getFullName() + '}';
    }
 
+   public boolean isReserved(String name) {
+      return reservedNames.contains(name);
+   }
+
+   public int[] getReservedNumbers() {
+      return reservedNumbers.stream().toArray();
+   }
+
    public static final class Builder implements OptionContainer<Builder>, FieldContainer<Builder>, EnumContainer<Builder>, MessageContainer<Builder>, ReservedContainer<Builder> {
       private String name, fullName;
       private List<Option> options = new ArrayList<>();
@@ -196,9 +207,18 @@ public final class Descriptor extends AnnotatedDescriptorImpl implements Generic
          return this;
       }
 
+      public String getName() {
+         return name;
+      }
+
       public Builder withFullName(String fullName) {
          this.fullName = fullName;
          return this;
+      }
+
+      @Override
+      public String getFullName() {
+         return fullName;
       }
 
       public Builder withOptions(List<Option> options) {
@@ -232,13 +252,13 @@ public final class Descriptor extends AnnotatedDescriptorImpl implements Generic
       }
 
       @Override
-      public Builder addField(FieldDescriptor field) {
-         this.fields.add(field);
+      public Builder addField(FieldDescriptor.Builder field) {
+         this.fields.add(field.build());
          return this;
       }
 
-      public Builder addOneOf(OneOfDescriptor oneOf) {
-         this.oneOfs.add(oneOf);
+      public Builder addOneOf(OneOfDescriptor.Builder oneOf) {
+         this.oneOfs.add(oneOf.build());
          return this;
       }
 
@@ -249,14 +269,14 @@ public final class Descriptor extends AnnotatedDescriptorImpl implements Generic
       }
 
       @Override
-      public Builder addEnum(EnumDescriptor enumDescriptor) {
-         this.nestedEnumTypes.add(enumDescriptor);
+      public Builder addEnum(EnumDescriptor.Builder enumDescriptor) {
+         this.nestedEnumTypes.add(enumDescriptor.withFullName(fullName + '.' + enumDescriptor.getName()).build());
          return this;
       }
 
       @Override
-      public Builder addMessage(Descriptor message) {
-         this.nestedMessageTypes.add(message);
+      public Builder addMessage(Descriptor.Builder message) {
+         this.nestedMessageTypes.add(message.withFullName(fullName + '.' + message.getName()).build());
          return this;
       }
 

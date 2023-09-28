@@ -39,12 +39,12 @@ public class Proto3Parser {
    }
 
    static void appendComment(StringBuilder s) {
-      ProtoFile.comments.get().append(s);
+      ProtostreamProtoParser.comments.get().append(s);
    }
 
    static String comment() {
-      String s = ProtoFile.comments.get().toString();
-      ProtoFile.comments.remove();
+      String s = ProtostreamProtoParser.comments.get().toString();
+      ProtostreamProtoParser.comments.remove();
       return DECOMMENTIFY.matcher(s).replaceAll("").trim();
    }
 
@@ -171,11 +171,11 @@ void Option(OptionContainer o) : {}
 }
 
 void Enum(EnumContainer c) : {
-   EnumDescriptor.Builder e = new EnumDescriptor.Builder();
+   EnumDescriptor.Builder e = new EnumDescriptor.Builder().withDocumentation(comment());
    String name;
 }
 {
-    <ENUM> name = EnumName() EnumBody(e) { c.addEnum(e.withName(name).build()); }
+    <ENUM> name = EnumName() EnumBody(e) { c.addEnum(e.withName(name)); }
 }
 
 void EnumBody(EnumDescriptor.Builder e) : {}
@@ -184,11 +184,11 @@ void EnumBody(EnumDescriptor.Builder e) : {}
 }
 
 void EnumField(EnumDescriptor.Builder e) : {
-   EnumValueDescriptor.Builder v = new EnumValueDescriptor.Builder();
+   EnumValueDescriptor.Builder v = new EnumValueDescriptor.Builder().withDocumentation(comment());
    Token t;
 }
 {
-    t = <IDENT> { v.withName(t.image); }<EQ> t = <NUMBER> { v.withTag(toInt(t)); } [ <LBRACKET> EnumValueOption(v) ( <COMMA> EnumValueOption(v) )+ <RBRACKET> ] { e.addValue(v.build()); }
+    t = <IDENT> { v.withName(t.image); }<EQ> t = <NUMBER> { v.withTag(toInt(t)); } [ <LBRACKET> EnumValueOption(v) ( <COMMA> EnumValueOption(v) )+ <RBRACKET> ] { e.addValue(v); }
 }
 
 void EnumValueOption(OptionContainer c) : {
@@ -200,14 +200,14 @@ void EnumValueOption(OptionContainer c) : {
 }
 
 void Field(FieldContainer c) : {
-   FieldDescriptor.Builder f = new FieldDescriptor.Builder();
+   FieldDescriptor.Builder f = new FieldDescriptor.Builder().withDocumentation(comment());
    String type;
    Token label;
    Token name;
    Token number;
 }
 {
-    [ label = <ATTRIBUTE> { f.withLabel(Label.fromString(label.image)); } ] type = Type() name = <IDENT> <EQ> number = <NUMBER> [ <LBRACKET> FieldOptions(f) <RBRACKET> ] <SEMI_COLON> { c.addField(f.withTypeName(type).withName(name.image).withNumber(toInt(number)).build()); }
+    [ label = <ATTRIBUTE> { f.withLabel(Label.fromString(label.image)); } ] type = Type() name = <IDENT> <EQ> number = <NUMBER> [ <LBRACKET> FieldOptions(f) <RBRACKET> ] <SEMI_COLON> { c.addField(f.withTypeName(type).withName(name.image).withNumber(toInt(number))); }
 }
 
 void FieldOptions(OptionContainer c) : {}
@@ -215,9 +215,12 @@ void FieldOptions(OptionContainer c) : {}
     FieldOption(c) ( <COMMA> FieldOption(c) )*
 }
 
-void FieldOption(OptionContainer c) : {}
+void FieldOption(OptionContainer c) : {
+   Token name;
+   String value;
+}
 {
-    <OPTIONNAME> <EQ> Constant()
+    (name = <IDENT> | name = <FULLIDENT>) <EQ> value = Constant() { c.addOption(new Option(name.image, value)); }
 }
 
 void MapField(Descriptor.Builder m) : {}
@@ -231,11 +234,11 @@ void KeyType() : {}
 }
 
 void Message(MessageContainer c) : {
-   Descriptor.Builder m = new Descriptor.Builder();
+   Descriptor.Builder m = new Descriptor.Builder().withDocumentation(comment());
    String name;
 }
 {
-    <MESSAGE> name = MessageName() MessageBody(m) { c.addMessage(m.withName(name).build()); }
+    <MESSAGE> name = MessageName() { m.withName(name).withFullName(c.getFullName() + '.' + name); } MessageBody(m) { c.addMessage(m); }
 }
 
 void MessageBody(Descriptor.Builder m) : {}
@@ -249,20 +252,21 @@ void MessageValue() : {}
 }
 
 void OneOf(Descriptor.Builder m) : {
-   OneOfDescriptor.Builder o = new OneOfDescriptor.Builder();
+   OneOfDescriptor.Builder o = new OneOfDescriptor.Builder().withDocumentation(comment());
    String name;
 }
 {
-    <ONEOF> name = OneOfName() <LBRACE> ( Option(m) | OneOfField(o) )+ <RBRACE> { m.addOneOf( o.withName(name).build()); }
+    <ONEOF> name = OneOfName() <LBRACE> ( Option(m) | OneOfField(o) )+ <RBRACE> { m.addOneOf( o.withName(name)); }
 }
 
 void OneOfField(OneOfDescriptor.Builder o) : {
-   FieldDescriptor.Builder f = new FieldDescriptor.Builder();
+   FieldDescriptor.Builder f = new FieldDescriptor.Builder().withLabel(Label.ONE_OF).withDocumentation(comment());
    String name;
    String type;
+   Token number;
 }
 {
-    type = Type() name = FieldName() <EQ> <NUMBER> [ <LBRACKET> FieldOptions(f) <RBRACKET> ] <SEMI_COLON> { o.addField(f.withTypeName(type).withName(name).build()); }
+    type = Type() name = FieldName() <EQ> number = <NUMBER> [ <LBRACKET> FieldOptions(f) <RBRACKET> ] <SEMI_COLON> { o.addField(f.withTypeName(type).withName(name).withNumber(toInt(number))); }
 }
 
 String Type() : {
@@ -282,14 +286,19 @@ void Ranges(ReservedContainer c) : {}
     Range(c) ( <COMMA> Range(c) )*
 }
 
-void Range(ReservedContainer c) : {}
+void Range(ReservedContainer c) : {
+   Token start;
+   Token end = null;
+}
 {
-    <NUMBER> [ <TO> <NUMBER> ]
+    start = <NUMBER> [ <TO> end = <NUMBER> ] { if (end == null) c.addReserved(toInt(start)); else c.addReserved(toInt(start), toInt(end)); }
 }
 
-void ReservedNames(ReservedContainer c) : {}
+void ReservedNames(ReservedContainer c) : {
+   Token name;
+}
 {
-    <STRLIT> ( <COMMA> <STRLIT> )*
+    name = <STRLIT> { c.addReserved(unquote(name)); } ( <COMMA> name = <STRLIT> { c.addReserved(unquote(name)); } )*
 }
 
 void Rpc() : {}

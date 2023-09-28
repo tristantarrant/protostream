@@ -1,5 +1,5 @@
 package org.infinispan.protostream.descriptors;
 
 public interface EnumContainer<T> {
-   T addEnum(EnumDescriptor enumDescriptor);
+   T addEnum(EnumDescriptor.Builder enumDescriptor);
 }
