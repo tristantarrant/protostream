@@ -115,7 +115,7 @@
                         <configuration>
                             <annotationProcessors>
                                 <annotationProcessor>
-                                    org.infinispan.protostream.annotations.impl.processor.AutoProtoSchemaBuilderAnnotationProcessor
+                                    org.infinispan.protostream.processor.ProtoSchemaAnnotationProcessor
                                 </annotationProcessor>
                             </annotationProcessors>
                         </configuration>

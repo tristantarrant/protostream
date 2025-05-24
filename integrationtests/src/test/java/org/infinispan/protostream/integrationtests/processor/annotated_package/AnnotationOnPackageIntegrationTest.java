@@ -16,7 +16,7 @@ import org.infinispan.protostream.SerializationContextInitializer;
 import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.infinispan.protostream.annotations.ProtoField;
 import org.infinispan.protostream.annotations.ProtoSyntax;
-import org.infinispan.protostream.annotations.impl.processor.tests.ReusableInitializer;
+import org.infinispan.protostream.processor.tests.ReusableInitializer;
 import org.infinispan.protostream.domain.User;
 import org.infinispan.protostream.integrationtests.processor.UserSerializationContextInitializer;
 import org.junit.Test;
